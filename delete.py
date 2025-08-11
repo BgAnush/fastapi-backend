@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, status
 from uuid import UUID
 import traceback
 
+import supabase
+
 router = APIRouter()
 
 @router.delete("/produce/delete/{produce_id}", status_code=status.HTTP_200_OK)
