@@ -12,24 +12,23 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 @router.post("/dashboard")
 async def farmer_dashboard(request: Request):
     data = await request.json()
-    email = data.get("email")
+    farmer_id = data.get("id")
 
-    print(f"📩 Dashboard request: email={email}")
+    print(f"📩 Dashboard request: farmer_id={farmer_id}")
 
-    if not email:
-        raise HTTPException(status_code=400, detail="Email is required")
+    if not farmer_id:
+        raise HTTPException(status_code=400, detail="Farmer ID is required")
 
-    # Fetch farmer profile
-    profile_resp = supabase.table("profiles").select("id,name").eq("email", email).execute()
+    # Fetch farmer profile by ID
+    profile_resp = supabase.table("profiles").select("id,name").eq("id", farmer_id).execute()
 
     if not profile_resp.data:
         raise HTTPException(status_code=404, detail="Profile not found")
 
     farmer = profile_resp.data[0]
-    farmer_id = farmer["id"]
     farmer_name = farmer["name"]
 
-    # Fetch produce by farmer_id with correct columns
+    # Fetch produce by farmer_id
     produce_resp = (
         supabase.table("produce")
         .select("id,crop_name,quantity,price_per_kg,status,image_url,type,created_at")
