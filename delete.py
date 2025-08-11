@@ -1,18 +1,13 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, status
 from uuid import UUID
-from supabase import create_client, Client
-import os
+import traceback
 
 router = APIRouter()
-
-# Setup Supabase client (or your DB client)
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @router.delete("/produce/delete/{produce_id}", status_code=status.HTTP_200_OK)
 async def delete_produce(produce_id: UUID):
     try:
+        # Your existing supabase queries here
         response = supabase.table("produce").select("id").eq("id", str(produce_id)).execute()
         if response.error:
             raise HTTPException(status_code=500, detail="Database error during lookup")
@@ -24,6 +19,8 @@ async def delete_produce(produce_id: UUID):
             raise HTTPException(status_code=500, detail="Failed to delete produce item")
 
         return {"message": "Produce item deleted successfully", "id": str(produce_id)}
+
     except Exception as e:
-        print(f"Exception during delete_produce: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        print(f"Exception in delete_produce: {e}")
+        traceback.print_exc()   # This will print full stack trace in logs
+        raise HTTPException(status_code=500, detail="Internal Server Error")
