@@ -11,7 +11,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Must be se
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-@app.delete("/produce/{produce_id}")
+@app.delete("/farmer/produce/{produce_id}")
 async def delete_produce(produce_id: UUID):
     produce_id_str = str(produce_id)
 
