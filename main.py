@@ -60,6 +60,13 @@ try:
     app.include_router(farmer_router, prefix="/farmer")
 except ImportError:
     print("⚠️ Failed to import `farmer` router.")
+try:
+ 
+ from delete import router as delete_router
+ app.include_router(delete_router, prefix="/farmer")
+ print("✅ Delete router imported successfully")
+except ImportError as e:
+    print(f"❌ Failed to import delete router: {str(e)}")
 
 # ✅ Health check and root
 @app.get("/ping")
