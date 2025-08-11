@@ -1,28 +1,33 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import FastAPI, HTTPException
 from uuid import UUID
-import traceback
+import os
+from supabase import create_client
 
-import supabase
+app = FastAPI()
 
-router = APIRouter()
+# Load your Supabase credentials from environment variables
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Must be service role key with delete permission
 
-@router.delete("/produce/delete/{produce_id}", status_code=status.HTTP_200_OK)
+supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+@app.delete("/produce/{produce_id}")
 async def delete_produce(produce_id: UUID):
-    try:
-        # Your existing supabase queries here
-        response = supabase.table("produce").select("id").eq("id", str(produce_id)).execute()
-        if response.error:
-            raise HTTPException(status_code=500, detail="Database error during lookup")
-        if not response.data:
-            raise HTTPException(status_code=404, detail="Produce item not found")
+    produce_id_str = str(produce_id)
 
-        delete_resp = supabase.table("produce").delete().eq("id", str(produce_id)).execute()
-        if delete_resp.error:
-            raise HTTPException(status_code=500, detail="Failed to delete produce item")
+    # Check if produce exists
+    response = supabase.table("produce").select("id").eq("id", produce_id_str).execute()
 
-        return {"message": "Produce item deleted successfully", "id": str(produce_id)}
+    if response.error:
+        raise HTTPException(status_code=500, detail=f"Database error: {response.error.message}")
 
-    except Exception as e:
-        print(f"Exception in delete_produce: {e}")
-        traceback.print_exc()   # This will print full stack trace in logs
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Produce item not found")
+
+    # Delete the produce item
+    delete_resp = supabase.table("produce").delete().eq("id", produce_id_str).execute()
+
+    if delete_resp.error:
+        raise HTTPException(status_code=500, detail=f"Failed to delete produce: {delete_resp.error.message}")
+
+    return {"message": "Produce item deleted successfully", "id": produce_id_str}
