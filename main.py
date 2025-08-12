@@ -3,16 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
 load_dotenv()
-
-SUPABASE_URL = os.getenv("EXPO_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("EXPO_PUBLIC_SUPABASE_KEY")
 
 app = FastAPI(
     title="Namma Raitha Backend",
     description="FastAPI backend for Farmer-Retailer mobile application",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 origins = [
@@ -21,7 +17,7 @@ origins = [
     "http://192.168.31.63:8081",
     "http://172.18.128.58:8081",
     "http://172.18.128.58:3000",
-    "*",  # Remove wildcard in production
+    "*",  # Use with caution in production, restrict as needed
 ]
 
 app.add_middleware(
@@ -32,6 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Import and include routers with prefixes
 try:
     from signup import router as signup_router
     app.include_router(signup_router, prefix="/auth")
@@ -64,7 +61,6 @@ try:
 except ImportError as e:
     print(f"❌ Failed to import delete router: {str(e)}")
 
-# Add retailer router
 try:
     from retailer import router as retailer_router
     app.include_router(retailer_router, prefix="/retailer")
