@@ -16,7 +16,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = FastAPI()
 
 
-@app.get("/available-produce")
+@app.get("/produce")
 def get_available_produce():
     try:
         print("🔄 Fetching available produce from Supabase...")
