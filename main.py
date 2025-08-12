@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
+# Load environment variables
 load_dotenv()
 
 app = FastAPI(
@@ -11,15 +12,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Allowed CORS origins
 origins = [
     "http://localhost:8081",
     "http://localhost:3000",
     "http://192.168.31.63:8081",
     "http://172.18.128.58:8081",
     "http://172.18.128.58:3000",
-    "*",  # Use with caution in production, restrict as needed
+    "*",  # Caution: allow all origins in production only if necessary
 ]
 
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -28,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import and include routers with prefixes
+# ===== Import and include routers =====
 try:
     from signup import router as signup_router
     app.include_router(signup_router, prefix="/auth")
@@ -63,11 +66,12 @@ except ImportError as e:
 
 try:
     from retailer import router as retailer_router
-    app.include_router(retailer_router)
+    app.include_router(retailer_router, prefix="/retailer")
     print("✅ Retailer router imported successfully")
 except ImportError as e:
     print(f"❌ Failed to import retailer router: {str(e)}")
 
+# ===== Health Check Routes =====
 @app.get("/ping")
 def ping():
     return {"message": "pong"}
