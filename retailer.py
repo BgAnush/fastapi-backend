@@ -14,8 +14,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("❌ Missing Supabase credentials in environment variables.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+router = APIRouter()
 
-@router.get("/produce", response_model=List[Dict[str, Any]])
+@router.get("/produce")
 async def get_all_instock_produce():
     """Get all produce items currently in stock with farmer details."""
     try:
