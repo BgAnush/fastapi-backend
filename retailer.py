@@ -13,8 +13,10 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@router.post("/dashboard")
+@router.post("/dashboard")  # This combined with prefix makes /retailer/dashboard
 async def retailer_dashboard(request: Request):
+    # Your implementation here
+    return {"message": "This is the retailer dashboard"}
     """
     Returns retailer profile info + available produce list with farmer names.
     Expected JSON: { "id": "<retailer_id>" }
