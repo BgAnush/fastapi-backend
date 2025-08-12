@@ -63,7 +63,7 @@ except ImportError as e:
 
 try:
     from retailer import router as retailer_router
-    app.include_router(retailer_router, prefix="/retailer")
+    app.include_router(retailer_router)
     print("✅ Retailer router imported successfully")
 except ImportError as e:
     print(f"❌ Failed to import retailer router: {str(e)}")
