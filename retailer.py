@@ -15,7 +15,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-@router.get("/produce")
+@router.get("/retailer/produce")
 async def get_all_instock_produce():
     try:
         loop = asyncio.get_event_loop()
