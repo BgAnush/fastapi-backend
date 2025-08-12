@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException
 from supabase import create_client, Client
 import os
 import asyncio
+from typing import List, Dict, Any
 
-router = APIRouter()
+router = APIRouter(prefix="/retailer", tags=["retailer"])
 
 # Load Supabase credentials from environment variables
 SUPABASE_URL = os.getenv("EXPO_PUBLIC_SUPABASE_URL")
@@ -14,54 +15,57 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
-@router.get("/retailer/produce")
+@router.get("/produce", response_model=List[Dict[str, Any]])
 async def get_all_instock_produce():
+    """Get all produce items currently in stock with farmer details."""
     try:
-        loop = asyncio.get_event_loop()
-
         # Fetch all produce items with status = 'in_stock'
-        produce_resp = await loop.run_in_executor(
-            None,
-            lambda: supabase.table("produce")
-                            .select("*")
-                            .eq("status", "in_stock")
-                            .execute()
-        )
+        produce_resp = await supabase.table("produce") \
+            .select("*") \
+            .eq("status", "in_stock") \
+            .execute()
 
         if produce_resp.error:
-            raise HTTPException(status_code=500, detail=f"Supabase error: {produce_resp.error.message}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Supabase error: {produce_resp.error.message}"
+            )
 
         produce_list = produce_resp.data or []
 
         if not produce_list:
             return []
 
-        # Extract unique farmer_ids from produce list
-        farmer_ids = list({item["farmer_id"] for item in produce_list})
+        # Get unique farmer IDs
+        farmer_ids = list({item["farmer_id"] for item in produce_list if item.get("farmer_id")})
 
-        # Fetch farmer profiles for these IDs to get their names
-        profiles_resp = await loop.run_in_executor(
-            None,
-            lambda: supabase.table("profiles")
-                            .select("id, name")
-                            .in_("id", farmer_ids)
-                            .execute()
-        )
+        if not farmer_ids:
+            # If no farmer IDs, return produce with unknown farmers
+            return [{"farmer_name": "Unknown", **item} for item in produce_list]
+
+        # Fetch farmer profiles
+        profiles_resp = await supabase.table("profiles") \
+            .select("id, name") \
+            .in_("id", farmer_ids) \
+            .execute()
 
         if profiles_resp.error:
-            raise HTTPException(status_code=500, detail=f"Supabase error: {profiles_resp.error.message}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Supabase error: {profiles_resp.error.message}"
+            )
 
         profiles = profiles_resp.data or []
-
-        # Create a map from farmer_id to farmer_name
         farmer_map = {profile["id"]: profile["name"] for profile in profiles}
 
-        # Attach farmer_name to each produce item
+        # Enhance produce items with farmer names
         for item in produce_list:
-            item["farmer_name"] = farmer_map.get(item["farmer_id"], "Unknown")
+            item["farmer_name"] = farmer_map.get(item.get("farmer_id"), "Unknown")
 
         return produce_list
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Server error: {str(e)}"
+        )
