@@ -17,7 +17,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 @router.get("/produce")
 async def get_all_instock_produce():
     """
-    Returns all produce items currently in stock with farmer names.
+    Returns all produce items currently in stock with farmer names (grouped format).
     """
     # ✅ Fetch all produce in stock
     produce_resp = (
@@ -33,32 +33,34 @@ async def get_all_instock_produce():
 
     produce_list = produce_resp.data or []
     if not produce_list:
-        return []
+        return {"total_in_stock": 0, "produce": []}
 
     # ✅ Extract farmer IDs
     farmer_ids = list({item["farmer_id"] for item in produce_list if item.get("farmer_id")})
-    if not farmer_ids:
-        # If no farmer IDs found, just return produce with "Unknown" farmer
-        return [{**item, "farmer_name": "Unknown"} for item in produce_list]
+    farmer_map = {}
 
-    # ✅ Fetch farmer names
-    profiles_resp = (
-        supabase.table("profiles")
-        .select("id,name")
-        .in_("id", farmer_ids)
-        .execute()
-    )
+    if farmer_ids:
+        # ✅ Fetch farmer names
+        profiles_resp = (
+            supabase.table("profiles")
+            .select("id,name")
+            .in_("id", farmer_ids)
+            .execute()
+        )
 
-    if getattr(profiles_resp, "error", None):
-        print(f"❌ Supabase error (profiles): {profiles_resp.error}")
-        raise HTTPException(status_code=500, detail="Database error while fetching profiles.")
+        if getattr(profiles_resp, "error", None):
+            print(f"❌ Supabase error (profiles): {profiles_resp.error}")
+            raise HTTPException(status_code=500, detail="Database error while fetching profiles.")
 
-    profiles = profiles_resp.data or []
-    farmer_map = {profile["id"]: profile["name"] for profile in profiles}
+        profiles = profiles_resp.data or []
+        farmer_map = {profile["id"]: profile["name"] for profile in profiles}
 
     # ✅ Attach farmer names to produce
     for item in produce_list:
         item["farmer_name"] = farmer_map.get(item.get("farmer_id"), "Unknown")
 
     print(f"✅ Returning {len(produce_list)} crops in stock.")
-    return produce_list
+    return {
+        "total_in_stock": len(produce_list),
+        "produce": produce_list
+    }
