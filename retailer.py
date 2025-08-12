@@ -3,7 +3,11 @@ from fastapi import APIRouter, HTTPException
 from supabase import create_client
 import os
 
-router = APIRouter(tags=["retailer"])
+router = APIRouter()
+
+@router.get("/retailer/produce")
+def get_produce(user_id: str, email: str):
+    return {"message": f"Fetching produce for {email} (ID: {user_id})"}
 
 # ✅ Supabase setup
 SUPABASE_URL = os.environ.get("EXPO_PUBLIC_SUPABASE_URL")
