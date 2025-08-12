@@ -5,6 +5,7 @@ import asyncio
 
 router = APIRouter()
 
+# Load Supabase credentials from environment variables
 SUPABASE_URL = os.getenv("EXPO_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("EXPO_PUBLIC_SUPABASE_KEY")
 
@@ -13,16 +14,19 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 @router.get("/produce")
 async def get_all_instock_produce():
     try:
-        # Supabase python client is synchronous, but you can run in a thread or async wrapper if needed.
-        # If your client is async, use `await`. Here, assuming sync, use run_in_executor:
         loop = asyncio.get_event_loop()
 
+        # Fetch all produce items with status = 'in_stock'
         produce_resp = await loop.run_in_executor(
             None,
-            lambda: supabase.table("produce").select("*").eq("status", "in_stock").execute()
+            lambda: supabase.table("produce")
+                            .select("*")
+                            .eq("status", "in_stock")
+                            .execute()
         )
 
         if produce_resp.error:
@@ -33,11 +37,16 @@ async def get_all_instock_produce():
         if not produce_list:
             return []
 
+        # Extract unique farmer_ids from produce list
         farmer_ids = list({item["farmer_id"] for item in produce_list})
 
+        # Fetch farmer profiles for these IDs to get their names
         profiles_resp = await loop.run_in_executor(
             None,
-            lambda: supabase.table("profiles").select("id, name").in_("id", farmer_ids).execute()
+            lambda: supabase.table("profiles")
+                            .select("id, name")
+                            .in_("id", farmer_ids)
+                            .execute()
         )
 
         if profiles_resp.error:
@@ -45,8 +54,10 @@ async def get_all_instock_produce():
 
         profiles = profiles_resp.data or []
 
+        # Create a map from farmer_id to farmer_name
         farmer_map = {profile["id"]: profile["name"] for profile in profiles}
 
+        # Attach farmer_name to each produce item
         for item in produce_list:
             item["farmer_name"] = farmer_map.get(item["farmer_id"], "Unknown")
 
