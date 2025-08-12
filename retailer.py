@@ -12,7 +12,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@router.get("/retailer/produce")
+@router.get("/produce")
 async def get_all_instock_produce():
     try:
         produce_resp = supabase.table("produce").select("*").eq("status", "in_stock").execute()
