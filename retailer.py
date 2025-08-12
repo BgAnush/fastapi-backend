@@ -42,20 +42,16 @@ class AddToCartRequest(BaseModel):
 
 
 # ---------- ROUTES ----------
-
-@router.get("/produce", response_model=List[ProduceItem])
-def get_available_produce():
-    """
-    Fetch all in-stock produce with farmer details.
-    Uses the get_available_produce_with_farmer() DB function.
-    """
+@router.get("/dashboard")
+def retailer_dashboard():
     try:
         response = supabase.rpc("get_available_produce_with_farmer").execute()
         if response.error:
             raise HTTPException(status_code=500, detail=response.error.message)
-        return response.data
+        return {"produce": response.data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching produce: {e}")
+        raise HTTPException(status_code=500, detail=f"Error fetching dashboard data: {e}")
+
 
 
 @router.post("/add-to-cart")
