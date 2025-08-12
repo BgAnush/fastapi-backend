@@ -4,9 +4,14 @@ import os
 import asyncio
 from typing import List, Dict, Any
 
+# Initialize router with prefix (choose ONE of these options)
+# Option 1: With prefix (then don't add prefix in main.py)
 router = APIRouter(prefix="/retailer", tags=["retailer"])
 
-# Load Supabase credentials from environment variables
+# Option 2: Without prefix (then add prefix in main.py)
+# router = APIRouter(tags=["retailer"])
+
+# Load Supabase credentials
 SUPABASE_URL = os.getenv("EXPO_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.getenv("EXPO_PUBLIC_SUPABASE_KEY")
 
@@ -14,9 +19,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("❌ Missing Supabase credentials in environment variables.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-router = APIRouter()
 
-@router.get("/produce")
+@router.get("/produce", response_model=List[Dict[str, Any]])
 async def get_all_instock_produce():
     """Get all produce items currently in stock with farmer details."""
     try:
