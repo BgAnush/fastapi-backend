@@ -13,7 +13,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@router.post("/retailer/dashboard")
+@router.post("/dashboard")
 async def retailer_dashboard(request: Request):
     """
     Returns retailer profile info + their orders or purchased produce list.
