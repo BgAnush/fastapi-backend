@@ -3,16 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
+# ✅ Load environment variables
 load_dotenv()
 
+# ✅ Create FastAPI app
 app = FastAPI(
     title="Namma Raitha Backend",
     description="FastAPI backend for Farmer-Retailer mobile application",
     version="1.0.0",
 )
 
-# Configure CORS
+# ✅ Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -21,31 +22,27 @@ app.add_middleware(
         "http://192.168.31.63:8081",
         "http://172.18.128.58:8081",
         "http://172.18.128.58:3000",
-        "*"
+        "*"  # Allow all origins
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Import and include routers with explicit error handling
-routers = [
-    ("auth.signup", "/auth"),
-    ("auth.login", "/auth"),
-    ("produce.add_produce", ""),
-    ("farmer", "/farmer"),
-    ("retailer", "/retailer")  # Now using explicit prefix here
-]
+# ✅ Import routers explicitly (no silent failures)
+from auth import signup, login
+from produce import add_produce
+import farmer
+import retailer
 
-for module, prefix in routers:
-    try:
-        router = __import__(module, fromlist=["router"]).router
-        app.include_router(router, prefix=prefix)
-        print(f"✅ {module} router registered at {prefix or '/'}")
-    except Exception as e:
-        print(f"❌ Failed to import {module} router: {str(e)}")
+# ✅ Register routers with prefixes and tags
+app.include_router(signup.router, prefix="/auth", tags=["auth"])
+app.include_router(login.router, prefix="/auth", tags=["auth"])
+app.include_router(add_produce.router, prefix="/produce", tags=["produce"])
+app.include_router(farmer.router, prefix="/farmer", tags=["farmer"])
+app.include_router(retailer.router, prefix="/retailer", tags=["retailer"])  # 👈 Will now show in /docs
 
-# Health check endpoints
+# ✅ Health check endpoints
 @app.get("/")
 async def root():
     return {"message": "Namma Raitha Backend is running"}
@@ -54,11 +51,12 @@ async def root():
 async def ping():
     return {"message": "pong"}
 
+# ✅ Debug endpoint: lists all registered routes
 @app.get("/routes")
 async def list_routes():
     return {
         "registered_routes": [
-            {"path": route.path, "methods": route.methods}
+            {"path": route.path, "methods": list(route.methods)}
             for route in app.routes
         ]
     }
