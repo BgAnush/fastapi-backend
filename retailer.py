@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from supabase import create_client
 import os
 
-router = APIRouter()
+router = APIRouter(prefix="/retailer")  # Only keep this one
 
 SUPABASE_URL = (
     os.environ.get("EXPO_PUBLIC_SUPABASE_URL")
@@ -19,13 +19,13 @@ def get_supabase():
     global _supabase
     if _supabase is None:
         if not SUPABASE_URL or not SUPABASE_KEY:
-            # 500 inside request (visible in logs), but app keeps running
             raise HTTPException(status_code=500, detail="Supabase credentials not configured")
         _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     return _supabase
-router = APIRouter(prefix="/retailer")
+
 @router.get("/produce/list")
 def get_in_stock_produce_with_farmers():
+    # ... rest of your function ...
     supabase = get_supabase()
 
     produce_resp = supabase.table("produce").select(

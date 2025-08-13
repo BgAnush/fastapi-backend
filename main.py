@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
+from numpy import outer
+
 # Load environment variables
 load_dotenv()
 
@@ -59,7 +61,7 @@ except ImportError:
 
 try:
     from retailer import router as retailer_router
-    app.include_router(retailer_router, prefix="/retailer")
+    app.include_router(retailer_router)
     print("✅ Retailer router imported successfully")
 except Exception as e:   # catch all, not just ImportError
     print(f"❌ Failed to import retailer router: {e}")
@@ -68,6 +70,10 @@ except Exception as e:   # catch all, not just ImportError
 @app.get("/ping")
 def ping():
     return {"message": "pong"}
+
+@outer.get("/test")
+def test_endpoint():
+    return {"message": "Retailer router is working"}
 
 @app.get("/")
 def root():
