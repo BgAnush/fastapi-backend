@@ -1,12 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import os
 
 # ✅ Load environment variables
 load_dotenv()
 
-# ✅ Create FastAPI app
+# ✅ Create FastAPI app instance
 app = FastAPI(
     title="Namma Raitha Backend",
     description="FastAPI backend for Farmer-Retailer mobile application",
@@ -22,27 +21,28 @@ app.add_middleware(
         "http://192.168.31.63:8081",
         "http://172.18.128.58:8081",
         "http://172.18.128.58:3000",
-        "*"  # Allow all origins
+        "*"  # Allow all origins (caution in production)
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Import routers explicitly (no silent failures)
-from auth import signup, login
-from produce import add_produce
+# ✅ Import routers directly from same directory
+import signup
+import login
+import add_produce
 import farmer
 import retailer
 
-# ✅ Register routers with prefixes and tags
+# ✅ Register routers
 app.include_router(signup.router, prefix="/auth", tags=["auth"])
 app.include_router(login.router, prefix="/auth", tags=["auth"])
 app.include_router(add_produce.router, prefix="/produce", tags=["produce"])
 app.include_router(farmer.router, prefix="/farmer", tags=["farmer"])
-app.include_router(retailer.router, prefix="/retailer", tags=["retailer"])  # 👈 Will now show in /docs
+app.include_router(retailer.router, prefix="/retailer", tags=["retailer"])
 
-# ✅ Health check endpoints
+# ✅ Health check
 @app.get("/")
 async def root():
     return {"message": "Namma Raitha Backend is running"}
@@ -51,7 +51,7 @@ async def root():
 async def ping():
     return {"message": "pong"}
 
-# ✅ Debug endpoint: lists all registered routes
+# ✅ Debug: List all routes
 @app.get("/routes")
 async def list_routes():
     return {
