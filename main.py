@@ -77,7 +77,7 @@ def ping():
     return {"message": "pong"}
 
 @app.get("/retailer/test")
-async def test_route():
+def test_route():
     return {"message": "Test route works"}
 
 
