@@ -58,14 +58,6 @@ except ImportError:
     print("⚠️ Failed to import `farmer` router.")
 
 try:
-    from delete import router as delete_router
-    app.include_router(delete_router, prefix="/farmer")
-    print("✅ Delete router imported successfully")
-except ImportError as e:
-    print(f"❌ Failed to import delete router: {str(e)}")
-
-
-try:
     from retailer import router as retailer_router
     app.include_router(retailer_router, prefix="/retailer")
     print("✅ Retailer router imported successfully")
