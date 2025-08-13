@@ -76,11 +76,6 @@ except ImportError as e:
 def ping():
     return {"message": "pong"}
 
-@app.get("/test")
-def test_route():
-    return {"message": "Test route works"}
-
-
 @app.get("/")
 def root():
     return {"message": "✅ FastAPI backend is running"}

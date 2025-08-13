@@ -1,73 +1,55 @@
-from fastapi import APIRouter, HTTPException, Request
+# retailer.py
+from fastapi import APIRouter
 from supabase import create_client
 import os
 
 router = APIRouter()
 
+# Supabase credentials from environment
 SUPABASE_URL = os.environ.get("EXPO_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("EXPO_PUBLIC_SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Missing Supabase credentials.")
+    raise RuntimeError("Missing Supabase credentials for retailer routes.")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-@router.post("/produce")
-async def get_produce_list(request: Request):
+@router.get("/produce/list")
+def get_in_stock_produce_with_farmers():
     """
-    Returns list of available produce for retailers to view.
-    Expected JSON (optional): filters like crop_name, farmer_id etc.
+    Returns all produce in stock along with their farmer details.
     """
-
-    try:
-        data = await request.json()
-    except Exception:
-        data = {}
-
-    crop_name = data.get("crop_name")
-    status = data.get("status", "in_stock")  # default to in_stock only
-
-    query = supabase.table("produce").select(
+    # Fetch produce with status = 'in_stock'
+    produce_resp = supabase.table("produce").select(
         "id,crop_name,quantity,price_per_kg,status,image_url,type,created_at,farmer_id"
-    ).eq("status", status)
-
-    if crop_name:
-        query = query.ilike("crop_name", f"%{crop_name}%")
-
-    produce_resp = query.execute()
-
-    if getattr(produce_resp, "error", None):
-        raise HTTPException(status_code=500, detail="Error fetching produce.")
+    ).eq("status", "in_stock").execute()
 
     produce_list = produce_resp.data or []
 
-    return {"total_produce": len(produce_list), "produce": produce_list}
+    if not produce_list:
+        return {"available_produce": []}
 
+    # Get unique farmer IDs
+    farmer_ids = list(set([p["farmer_id"] for p in produce_list]))
 
-@router.post("/retailer/profile")
-async def get_retailer_profile(request: Request):
-    """
-    Returns retailer profile info.
-    Expected JSON: { "id": "<retailer_id>" }
-    """
-    try:
-        data = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON body.")
+    # Fetch farmer names
+    farmers_resp = supabase.table("profiles").select("id,name").in_("id", farmer_ids).execute()
+    farmer_dict = {f["id"]: f["name"] for f in farmers_resp.data or []}
 
-    retailer_id = data.get("id")
-    if not retailer_id:
-        raise HTTPException(status_code=400, detail="Retailer ID required.")
+    # Merge produce with farmer info
+    result = []
+    for p in produce_list:
+        result.append({
+            "id": p["id"],
+            "crop_name": p["crop_name"],
+            "type": p["type"],
+            "quantity": p["quantity"],
+            "price_per_kg": p["price_per_kg"],
+            "status": p["status"],
+            "image_url": p["image_url"] or "https://via.placeholder.com/300x200.png?text=No+Image",
+            "created_at": p["created_at"],
+            "farmer_name": farmer_dict.get(p["farmer_id"], "Unknown")
+        })
 
-    profile_resp = supabase.table("profiles").select("id,name,email").eq("id", retailer_id).execute()
-
-    if getattr(profile_resp, "error", None):
-        raise HTTPException(status_code=500, detail="Error fetching profile.")
-
-    if not profile_resp.data:
-        raise HTTPException(status_code=404, detail="Profile not found.")
-
-    retailer = profile_resp.data[0]
-
-    return {"retailer": retailer}
+    return {"available_produce": result}
