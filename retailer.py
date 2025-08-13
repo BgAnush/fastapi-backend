@@ -1,30 +1,35 @@
 from fastapi import APIRouter, HTTPException
 from supabase import create_client
 import os
+from typing import List
+from pydantic import BaseModel
 from datetime import datetime
 
-router = APIRouter(prefix="/retailer")
+router = APIRouter(tags=["Retailer"])
 
-# Supabase configuration
-SUPABASE_URL = os.environ.get("EXPO_PUBLIC_SUPABASE_URL") or os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("EXPO_PUBLIC_SUPABASE_KEY") or os.environ.get("SUPABASE_KEY")
+# Response Models
+class ProduceItem(BaseModel):
+    id: int
+    crop_name: str
+    type: str
+    quantity: float
+    price_per_kg: float
+    status: str
+    image_url: str
+    created_at: datetime
+    farmer_name: str
 
-# Supabase client singleton
-_supabase = None
+class ProduceListResponse(BaseModel):
+    available_produce: List[ProduceItem]
 
-def get_supabase():
-    global _supabase
-    if _supabase is None:
-        if not SUPABASE_URL or not SUPABASE_KEY:
-            raise HTTPException(
-                status_code=500,
-                detail="Supabase credentials not configured"
-            )
-        _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    return _supabase
+# Initialize Supabase client
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY")
+)
 
-@router.get("/test")
-def retailer_test():
+@router.get("/test", response_model=dict)
+async def test_retailer():
     """Test endpoint for retailer routes"""
     return {
         "status": "success",
@@ -32,48 +37,41 @@ def retailer_test():
         "timestamp": datetime.now().isoformat()
     }
 
-@router.get("/produce/list")
-async def get_in_stock_produce_with_farmers():
+@router.get("/produce/list", response_model=ProduceListResponse)
+async def get_produce_list():
     """
-    Retrieve all produce currently in stock with farmer information
+    Retrieve all available produce with farmer information
     Returns:
-        List of produce items with farmer details
+        - List of produce items with details
+        - Farmer information for each item
     """
     try:
-        supabase = get_supabase()
-
         # Fetch in-stock produce
-        produce_resp = supabase.table("produce").select(
-            "id,crop_name,quantity,price_per_kg,status,image_url,type,created_at,farmer_id"
-        ).eq("status", "in_stock").execute()
-
-        produce_list = produce_resp.data or []
-        if not produce_list:
+        produce_data = supabase.table("produce")\
+            .select("*, farmer:profiles(name)")\
+            .eq("status", "in_stock")\
+            .execute()
+        
+        if not produce_data.data:
             return {"available_produce": []}
 
-        # Get unique farmer IDs
-        farmer_ids = list({p["farmer_id"] for p in produce_list if p.get("farmer_id")})
-        
-        # Fetch farmer names
-        farmers_resp = supabase.table("profiles").select("id,name").in_("id", farmer_ids).execute()
-        farmer_dict = {f["id"]: f["name"] for f in (farmers_resp.data or [])}
-
         # Format response
-        result = []
-        for p in produce_list:
-            result.append({
-                "id": p["id"],
-                "crop_name": p["crop_name"],
-                "type": p["type"],
-                "quantity": p["quantity"],
-                "price_per_kg": p["price_per_kg"],
-                "status": p["status"],
-                "image_url": p.get("image_url") or "https://via.placeholder.com/300x200.png?text=No+Image",
-                "created_at": p["created_at"],
-                "farmer_name": farmer_dict.get(p["farmer_id"], "Unknown"),
-            })
-
-        return {"available_produce": result}
+        return {
+            "available_produce": [
+                {
+                    "id": item["id"],
+                    "crop_name": item["crop_name"],
+                    "type": item["type"],
+                    "quantity": item["quantity"],
+                    "price_per_kg": item["price_per_kg"],
+                    "status": item["status"],
+                    "image_url": item.get("image_url") or "https://via.placeholder.com/300x200.png?text=No+Image",
+                    "created_at": item["created_at"],
+                    "farmer_name": item["farmer"]["name"] if item.get("farmer") else "Unknown"
+                }
+                for item in produce_data.data
+            ]
+        }
 
     except Exception as e:
         raise HTTPException(
