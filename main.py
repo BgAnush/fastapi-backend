@@ -1,62 +1,70 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import os
 
-# ✅ Load environment variables
+# ✅ Load environment variables from .env file
 load_dotenv()
 
-# ✅ Create FastAPI app instance
+# ✅ Supabase credentials from .env
+SUPABASE_URL = os.getenv("EXPO_PUBLIC_SUPABASE_URL")
+SUPABASE_KEY = os.getenv("EXPO_PUBLIC_SUPABASE_KEY")
+
+# ✅ Initialize FastAPI app
 app = FastAPI(
     title="Namma Raitha Backend",
     description="FastAPI backend for Farmer-Retailer mobile application",
-    version="1.0.0",
+    version="1.0.0"
 )
 
-# ✅ Configure CORS
+# ✅ CORS configuration
+origins = [
+    "http://localhost:8081",
+    "http://localhost:3000",
+    "http://192.168.31.63:8081",
+    "http://172.18.128.58:8081",
+    "http://172.18.128.58:3000",
+    "*",  # ❗ Remove wildcard in production
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8081",
-        "http://localhost:3000",
-        "http://192.168.31.63:8081",
-        "http://172.18.128.58:8081",
-        "http://172.18.128.58:3000",
-        "*"  # Allow all origins (caution in production)
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Import routers directly from same directory
-import signup
-import login
-import add_produce
-import farmer
-import retailer
+# ✅ Include routers (modular route handlers)
+try:
+    from signup import router as signup_router
+    app.include_router(signup_router, prefix="/auth")
+except ImportError:
+    print("⚠️ Failed to import `signup` router.")
 
-# ✅ Register routers
-app.include_router(signup.router, prefix="/auth", tags=["auth"])
-app.include_router(login.router, prefix="/auth", tags=["auth"])
-app.include_router(add_produce.router, prefix="/produce", tags=["produce"])
-app.include_router(farmer.router, prefix="/farmer", tags=["farmer"])
-app.include_router(retailer.router, prefix="/retailer", tags=["retailer"])
+try:
+    from login import router as login_router
+    app.include_router(login_router, prefix="/auth")
+except ImportError:
+    print("⚠️ Failed to import `login` router.")
 
-# ✅ Health check
-@app.get("/")
-async def root():
-    return {"message": "Namma Raitha Backend is running"}
+try:
+    from add_produce import router as add_produce_router
+    app.include_router(add_produce_router, prefix="/produce")
+except ImportError:
+    print("⚠️ Failed to import `add_produce` router.")
 
+try:
+    from farmer import router as farmer_router
+    app.include_router(farmer_router, prefix="/farmer")
+except ImportError:
+    print("⚠️ Failed to import `farmer` router.")
+
+# ✅ Health check and root
 @app.get("/ping")
-async def ping():
+def ping():
     return {"message": "pong"}
 
-# ✅ Debug: List all routes
-@app.get("/routes")
-async def list_routes():
-    return {
-        "registered_routes": [
-            {"path": route.path, "methods": list(route.methods)}
-            for route in app.routes
-        ]
-    }
+@app.get("/")
+def root():
+    return {"message": "✅ FastAPI backend is running"}
