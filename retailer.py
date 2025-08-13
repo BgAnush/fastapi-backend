@@ -23,7 +23,7 @@ def get_supabase():
             raise HTTPException(status_code=500, detail="Supabase credentials not configured")
         _supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     return _supabase
-
+router = APIRouter(prefix="/retailer")
 @router.get("/produce/list")
 def get_in_stock_produce_with_farmers():
     supabase = get_supabase()
