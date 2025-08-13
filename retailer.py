@@ -25,7 +25,7 @@ class RetailerDashboardResponse(BaseModel):
     retailer_name: str
     produce: List[ProduceItem]
 
-@router.post("/retailer/dashboard", response_model=RetailerDashboardResponse)
+@router.post("/dashboard", response_model=RetailerDashboardResponse)
 def get_retailer_dashboard(user_id: UUID, email: str):
     # Fetch retailer profile
     retailer_resp = supabase.table("profiles") \
