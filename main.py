@@ -76,7 +76,7 @@ except ImportError as e:
 def ping():
     return {"message": "pong"}
 
-@app.get("/retailer/test")
+@app.get("/test")
 def test_route():
     return {"message": "Test route works"}
 
