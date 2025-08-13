@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from supabase import create_client
 import os
 
@@ -13,6 +13,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# This is the endpoint that the frontend is trying to call
 @router.get("/produce/list")
 async def get_all_produce():
     """
@@ -36,7 +37,6 @@ async def get_all_produce():
     except Exception as e:
         print(f"❌ An unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal server error.")
-
 
 @router.get("/produce/{crop_id}")
 async def get_crop_details(crop_id: str):
