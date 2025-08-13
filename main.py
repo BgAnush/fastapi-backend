@@ -64,12 +64,13 @@ try:
 except ImportError as e:
     print(f"❌ Failed to import delete router: {str(e)}")
 
+
 try:
     from retailer import router as retailer_router
     app.include_router(retailer_router, prefix="/retailer")
     print("✅ Retailer router imported successfully")
-except ImportError as e:
-    print(f"❌ Failed to import retailer router: {str(e)}")
+except Exception as e:   # catch all, not just ImportError
+    print(f"❌ Failed to import retailer router: {e}")
 
 # ===== Health Check Routes =====
 @app.get("/ping")
