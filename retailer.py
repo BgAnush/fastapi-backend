@@ -4,7 +4,6 @@ import os
 
 router = APIRouter()
 
-# ✅ Supabase setup from environment variables
 SUPABASE_URL = os.environ.get("EXPO_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("EXPO_PUBLIC_SUPABASE_KEY")
 
@@ -25,40 +24,32 @@ async def retailer_dashboard(request: Request):
         raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
     retailer_id = data.get("id")
-    print(f"📩 Received dashboard request: retailer_id={retailer_id}")
-
     if not retailer_id:
         raise HTTPException(status_code=400, detail="Retailer ID is required.")
 
-    # ✅ Fetch retailer profile
     profile_resp = supabase.table("profiles").select("id,name").eq("id", retailer_id).execute()
     if getattr(profile_resp, "error", None):
-        print(f"❌ Supabase error (profiles): {profile_resp.error}")
-        raise HTTPException(status_code=500, detail="Database error while fetching profile.")
+        raise HTTPException(status_code=500, detail="Error fetching profile.")
 
     if not profile_resp.data:
         raise HTTPException(status_code=404, detail="Profile not found.")
 
     retailer = profile_resp.data[0]
-    retailer_name = retailer["name"]
 
-    # ✅ Fetch retailer's related produce or orders
     produce_resp = (
-        supabase.table("orders")  # or your relevant table
+        supabase.table("orders")
         .select("id,produce_id,quantity,total_price,status,created_at")
         .eq("retailer_id", retailer_id)
         .execute()
     )
 
     if getattr(produce_resp, "error", None):
-        print(f"❌ Supabase error (orders): {produce_resp.error}")
-        raise HTTPException(status_code=500, detail="Database error while fetching retailer data.")
+        raise HTTPException(status_code=500, detail="Error fetching orders.")
 
     orders_data = produce_resp.data or []
-    print(f"✅ Found {len(orders_data)} orders for retailer '{retailer_name}'")
 
     return {
-        "retailer_name": retailer_name,
+        "retailer_name": retailer["name"],
         "total_orders": len(orders_data),
         "orders": orders_data,
     }

@@ -40,7 +40,7 @@ app.include_router(signup.router, prefix="/auth", tags=["auth"])
 app.include_router(login.router, prefix="/auth", tags=["auth"])
 app.include_router(add_produce.router, prefix="/produce", tags=["produce"])
 app.include_router(farmer.router, prefix="/farmer", tags=["farmer"])
-app.include_router(retailer.router, tags=["retailer"])
+app.include_router(retailer.router, prefix="/retailer", tags=["retailer"])
 
 # ✅ Health check
 @app.get("/")
