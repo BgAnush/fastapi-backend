@@ -3,8 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
-from numpy import outer
-
 # Load environment variables
 load_dotenv()
 
@@ -37,33 +35,36 @@ app.add_middleware(
 try:
     from signup import router as signup_router
     app.include_router(signup_router, prefix="/auth")
-except ImportError:
-    print("⚠️ Failed to import `signup` router.")
+    print("✅ Signup router imported successfully")
+except ImportError as e:
+    print(f"⚠️ Failed to import signup router: {e}")
 
 try:
     from login import router as login_router
     app.include_router(login_router, prefix="/auth")
-except ImportError:
-    print("⚠️ Failed to import `login` router.")
+    print("✅ Login router imported successfully")
+except ImportError as e:
+    print(f"⚠️ Failed to import login router: {e}")
 
 try:
     from add_produce import router as add_produce_router
     app.include_router(add_produce_router)
     print("✅ Produce router imported successfully")
 except ImportError as e:
-    print(f"❌ Failed to import produce router: {str(e)}")
+    print(f"❌ Failed to import produce router: {e}")
 
 try:
     from farmer import router as farmer_router
     app.include_router(farmer_router, prefix="/farmer")
-except ImportError:
-    print("⚠️ Failed to import `farmer` router.")
+    print("✅ Farmer router imported successfully")
+except ImportError as e:
+    print(f"⚠️ Failed to import farmer router: {e}")
 
 try:
     from retailer import router as retailer_router
-    app.include_router(retailer_router)
+    app.include_router(retailer_router)  # Prefix is handled in retailer.py
     print("✅ Retailer router imported successfully")
-except Exception as e:   # catch all, not just ImportError
+except Exception as e:
     print(f"❌ Failed to import retailer router: {e}")
 
 # ===== Health Check Routes =====
@@ -71,9 +72,16 @@ except Exception as e:   # catch all, not just ImportError
 def ping():
     return {"message": "pong"}
 
-@outer.get("/test")
+@app.get("/test")
 def test_endpoint():
-    return {"message": "Retailer router is working"}
+    """Test endpoint to verify base URL is working"""
+    return {
+        "message": "API is running",
+        "endpoints": {
+            "retailer_test": "/retailer/test",
+            "produce_list": "/retailer/produce/list"
+        }
+    }
 
 @app.get("/")
 def root():
