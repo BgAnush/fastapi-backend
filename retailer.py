@@ -13,25 +13,25 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-@router.post("/dashboard")
-async def farmer_dashboard(request: Request):
+@router.post("/retailer/dashboard")
+async def retailer_dashboard(request: Request):
     """
-    Returns farmer profile info + their produce list.
-    Expected JSON: { "id": "<farmer_id>" }
+    Returns retailer profile info + their orders or purchased produce list.
+    Expected JSON: { "id": "<retailer_id>" }
     """
     try:
         data = await request.json()
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
-    farmer_id = data.get("id")
-    print(f"📩 Received dashboard request: farmer_id={farmer_id}")
+    retailer_id = data.get("id")
+    print(f"📩 Received dashboard request: retailer_id={retailer_id}")
 
-    if not farmer_id:
-        raise HTTPException(status_code=400, detail="Farmer ID is required.")
+    if not retailer_id:
+        raise HTTPException(status_code=400, detail="Retailer ID is required.")
 
-    # ✅ Fetch farmer profile
-    profile_resp = supabase.table("profiles").select("id,name").eq("id", farmer_id).execute()
+    # ✅ Fetch retailer profile
+    profile_resp = supabase.table("profiles").select("id,name").eq("id", retailer_id).execute()
     if getattr(profile_resp, "error", None):
         print(f"❌ Supabase error (profiles): {profile_resp.error}")
         raise HTTPException(status_code=500, detail="Database error while fetching profile.")
@@ -39,26 +39,26 @@ async def farmer_dashboard(request: Request):
     if not profile_resp.data:
         raise HTTPException(status_code=404, detail="Profile not found.")
 
-    farmer = profile_resp.data[0]
-    farmer_name = farmer["name"]
+    retailer = profile_resp.data[0]
+    retailer_name = retailer["name"]
 
-    # ✅ Fetch farmer's produce
+    # ✅ Fetch retailer's related produce or orders
     produce_resp = (
-        supabase.table("produce")
-        .select("id,crop_name,quantity,price_per_kg,status,image_url,type,created_at")
-        .eq("farmer_id", farmer_id)
+        supabase.table("orders")  # or your relevant table
+        .select("id,produce_id,quantity,total_price,status,created_at")
+        .eq("retailer_id", retailer_id)
         .execute()
     )
 
     if getattr(produce_resp, "error", None):
-        print(f"❌ Supabase error (produce): {produce_resp.error}")
-        raise HTTPException(status_code=500, detail="Database error while fetching produce.")
+        print(f"❌ Supabase error (orders): {produce_resp.error}")
+        raise HTTPException(status_code=500, detail="Database error while fetching retailer data.")
 
-    produce_data = produce_resp.data or []
-    print(f"✅ Found {len(produce_data)} crops for farmer '{farmer_name}'")
+    orders_data = produce_resp.data or []
+    print(f"✅ Found {len(orders_data)} orders for retailer '{retailer_name}'")
 
     return {
-        "farmer_name": farmer_name,
-        "total_crops": len(produce_data),
-        "produce": produce_data,
+        "retailer_name": retailer_name,
+        "total_orders": len(orders_data),
+        "orders": orders_data,
     }
